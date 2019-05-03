@@ -1,0 +1,4 @@
+nextcloud/
+db/
+db.env
+syncthing-config
