@@ -1,0 +1,55 @@
+version: '3'
+
+services:
+  db:
+    image: mariadb
+    command: --transaction-isolation=READ-COMMITTED --binlog-format=ROW --log-bin
+    restart: always
+    volumes:
+      - db:/var/lib/mysql
+    env_file:
+      - db.env
+
+  redis:
+    image: redis
+    restart: always
+
+  app:
+    image: nextcloud:fpm
+    restart: always
+    volumes:
+      - nextcloud:/var/www/html
+      - ./redis.config.php:/usr/src/nextcloud/config/redis.config.php:ro
+    environment:
+      - MYSQL_HOST=db
+    env_file:
+      - db.env
+    depends_on:
+      - db
+
+  caddy:
+    image: abiosoft/caddy:0.11.0-php
+    restart: always
+    ports:
+      - 443:443
+      - 80:80
+    volumes:
+      - ./Caddyfile:/etc/Caddyfile
+      - nextcloud:/srv:ro
+  
+  syncthing:
+    image: syncthing/syncthing
+    restart: always
+    environment:
+      - PUID=33
+      - PGID=0
+    ports:
+      - 8384:8384
+      - 22000:22000
+    volumes:
+      - nextcloud:/var/syncthing/nextcloud
+      - ./syncthing-config:/var/syncthing/config/
+
+volumes:
+  db: {}
+  nextcloud: {}
